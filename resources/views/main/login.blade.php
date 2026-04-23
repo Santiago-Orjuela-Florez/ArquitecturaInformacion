@@ -17,8 +17,9 @@
             <p class="text-gray-500 font-medium text-sm">Panel de Gestión Corporativa</p>
         </div>
 
-        <form method="POST" action="{{ route('login') }}" class="space-y-6">
-            @csrf
+        <form method="POST" action="{{ route('login.post') }}" class="space-y-6">
+         @csrf
+  
 
             <!-- Email -->
             <div>

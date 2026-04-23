@@ -5,92 +5,55 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+use App\Models\PdfDocument;
+use App\Models\Registro;
 
 class PdfController extends Controller
 {
+    /**
+     * Consulta técnica para el microservicio de búsqueda SAP.
+     */
     public function buscar(Request $request)
     {
         try {
-            // Validar los datos de entrada
             $request->validate([
-                'material' => 'required',
-                'documento' => 'required',
+                'purchase_order' => 'required',
+                'material_number' => 'required',
             ]);
 
-            // Debug: Ver qué datos llegan
-            \Log::info('Buscando datos:', [
-                'material_document' => $request->documento,
-                'material_lot' => $request->material
-            ]);
+            // Mapeo: material = Material Number, material_document = Purchase Order
+            $registro = Registro::where('material', $request->material_number)
+                ->where('material_document', $request->purchase_order)
+                ->first();
 
-            // Reutilizamos la lógica de tu consulta
-            $totalQuantity = DB::table('registros')
-                ->join('batches', 'registros.id', '=', 'batches.registro_id')
-                ->where('registros.material', $request->documento)
-                ->where('registros.material_document', $request->material)
-                ->sum('batches.quantity');
+            if ($registro) {
+                $totalQuantity = $registro->batches()->sum('quantity');
+                $batches = $registro->batches()->pluck('batch')->unique()->values()->toArray();
+                $fecha = $registro->batches()->whereNotNull('date')->value('date');
 
-            // Obtener descripción
-            $descripcion = DB::table('registros')
-                ->where('material', $request->documento)
-                ->where('material_document', $request->material)
-                ->value('material_description');
-
-            // Obtener lista de batches concatenados
-            $batchesArray = DB::table('registros')
-                ->join('batches', 'registros.id', '=', 'batches.registro_id')
-                ->where('registros.material', $request->documento)
-                ->where('registros.material_document', $request->material)
-                ->pluck('batches.batch')
-                ->unique()
-                ->values()
-                ->toArray();
-
-            // Lógica de distribución de Batches
-            $primaryBatch = '';
-            $extraBatchesList = '';
-
-            if (count($batchesArray) > 0) {
-                // El primero siempre va al campo principal
-                $primaryBatch = $batchesArray[0];
-
-                // Si hay más de uno, el resto va a la lista de extras
-                if (count($batchesArray) > 1) {
-                    $extraBatchesList = implode(', ', array_slice($batchesArray, 1));
-                }
+                return response()->json([
+                    'total_quantity' => (int) $totalQuantity,
+                    'primary_batch' => $batches[0] ?? '',
+                    'extra_batches_list' => count($batches) > 1 ? implode(', ', array_slice($batches, 1)) : '',
+                    'delivery_date' => $fecha,
+                    'material_description' => $registro->material_description
+                ]);
             }
 
-            // Obtener fecha (tomamos la del primer batch encontrado)
-            $fecha = DB::table('registros')
-                ->join('batches', 'registros.id', '=', 'batches.registro_id')
-                ->where('registros.material', $request->documento)
-                ->where('registros.material_document', $request->material)
-                ->whereNotNull('batches.date')
-                ->value('batches.date');
-
-            $result = [
-                'material' => $request->material,
-                'material_document' => $request->documento,
-                'material_description' => $descripcion,
-                'total_quantity' => (int) $totalQuantity,
-                'primary_batch' => $primaryBatch,       // Dato para el campo 'Batch'
-                'extra_batches_list' => $extraBatchesList, // Dato para el campo 'Batches' (abajo)
-                'delivery_date' => $fecha // Enviamos la fecha
-            ];
-
-            \Log::info('Resultado encontrado:', $result);
-
-            // Respondemos con JSON para que JavaScript lo lea
-            return response()->json($result);
+            return response()->json(['error' => 'No se encontraron registros en SAP.'], 404);
 
         } catch (\Exception $e) {
-            \Log::error('Error en buscar:', ['error' => $e->getMessage()]);
+            \Log::error('Error en búsqueda SAP: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Genera, guarda y descarga el formulario de inspección.
+     */
     public function descargarPdf(Request $request)
     {
-        // 1. Validación de datos
         $data = $request->validate([
             'purchase_order' => 'required',
             'material_number' => 'required',
@@ -107,16 +70,16 @@ class PdfController extends Controller
             'units2' => 'nullable',
             'manufacturing_date' => 'nullable',
             'best_before_date' => 'nullable',
-            'inspeccion' => 'nullable|array', // Validar array de checkboxes
-            'fallos' => 'nullable|array', // Nuevo array para items no cumplidos (X)
+            'inspeccion' => 'nullable|array',
+            'fallos' => 'nullable|array',
             'radio_check' => 'nullable',
         ]);
 
-        // 2. Ejecución de la consulta con Agrupamiento (GroupBy)
-        // Agregamos groupBy para que el SUM() funcione correctamente en SQL
+        // Consulta de validación final para el PDF
         $result = DB::table('registros')
             ->join('batches', 'registros.id', '=', 'batches.registro_id')
             ->select(
+                'registros.id',
                 'registros.material',
                 'registros.material_description',
                 'registros.material_document',
@@ -124,47 +87,35 @@ class PdfController extends Controller
                 'batches.date',
                 DB::raw('SUM(batches.quantity) as total_quantity')
             )
-            ->where('registros.material', '=', $request->purchase_order)
-            ->where('registros.material_document', '=', $request->material_number)
-            ->where('batches.date', '=', $request->delivery_date)
-            ->where('batches.batch', '=', $request->batch)
-            ->groupBy(
-                'registros.material',
-                'registros.material_description',
-                'registros.material_document',
-                'batches.batch',
-                'batches.date'
-            )
+            ->where('registros.material', $request->material_number)
+            ->where('registros.material_document', $request->purchase_order)
+            ->where('batches.batch', $request->batch)
+            ->groupBy('registros.id', 'registros.material', 'registros.material_description', 'registros.material_document', 'batches.batch', 'batches.date')
             ->first();
 
-        // 3. Generación y descarga del PDF
-        // Pasamos todos los datos necesarios en un solo array
-        return Pdf::loadView('productos.plantilla', [
+        // Configuración de vista PDF
+        $pdf = Pdf::loadView('productos.plantilla', array_merge($data, [
             'modo' => 'pdf',
-            'nombre' => 'PRUEBA PDF',
-            'purchase_order' => $request->purchase_order,
-            'material_number' => $request->material_number,
-            'ean' => $request->ean,
-            'pallets' => $request->pallets,
-            'units' => $request->units,
-            'pallets2' => $request->pallets2,
-            'units2' => $request->units2,
-            'manufacturing_date' => $request->manufacturing_date,
-            'best_before_date' => $request->best_before_date,
-            'delivery_date' => $request->delivery_date,
-            'batch' => $request->batch,
-            'quantity' => $request->quantity,
-            'batches' => $request->batches,
-            'inspeccion' => $request->inspeccion, // Pasamos el array de inspección
-            'fallos' => $request->fallos, // Pasamos los fallos a la vista
-            'sign_warehouse' => $request->sign_warehouse,
-            'sign_inventory' => $request->sign_inventory,
-            'radio_check' => $request->radio_check,
-            'result' => $result, // Aquí viaja la suma y los datos de la DB
-        ])
-            ->setPaper('legal', 'portrait')
-            ->setOption('dpi', 72)
-            ->setOption('defaultFont', 'DejaVu Sans')
-            ->download('formulario.pdf');
+            'result' => $result
+        ]))
+        ->setPaper('legal', 'portrait')
+        ->setOption('dpi', 72)
+        ->setOption('defaultFont', 'DejaVu Sans');
+
+        // Persistencia
+        $filename = 'formulario_' . $request->purchase_order . '_' . time() . '.pdf';
+        $path = 'pdfs/' . $filename;
+        
+        // Guardado físico en storage/app/public/pdfs
+        Storage::disk('public')->put($path, $pdf->output());
+
+        // Registro en historial (DB Secundaria)
+        PdfDocument::create([
+            'registro_id' => $result ? $result->id : 0, 
+            'filename' => $filename,
+            'path' => $path,
+        ]);
+
+        return $pdf->download($filename);
     }
 }

@@ -3,15 +3,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnConsultar) {
         btnConsultar.addEventListener('click', function() {
-            // 1. Extraer la URL y el Token desde los atributos 'data' del botón
             const url = this.getAttribute('data-url');
             const token = this.getAttribute('data-token');
 
-            // 2. Obtener valores de los inputs
-            let material = document.getElementsByName('purchase_order')[0].value;
-            let documento = document.getElementsByName('material_number')[0].value;
+            // Capturar por ID
+            const po = document.getElementById('purchase_order').value;
+            const mn = document.getElementById('material_number').value;
 
-            // 3. Petición Fetch
+            if (!po || !mn) {
+                alert("Ingresa Purchase Order y Material No.");
+                return;
+            }
+
             fetch(url, {
                 method: "POST",
                 headers: {
@@ -19,23 +22,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     "X-CSRF-TOKEN": token
                 },
                 body: JSON.stringify({ 
-                    material: material, 
-                    documento: documento 
+                    purchase_order: po, 
+                    material_number: mn 
                 })
             })
             .then(response => response.json())
             .then(data => {
-                if (data && data.total_quantity !== undefined) {
-                    // Rellenar el campo quantity
-                    document.getElementsByName('quantity')[0].value = data.total_quantity;
+                if (data && !data.error) {
+                    // Rellenar campos automáticamente usando los IDs
+                    document.getElementById('quantity').value = data.total_quantity;
+                    document.getElementById('batch').value = data.primary_batch;
+                    document.getElementById('delivery_date').value = data.delivery_date;
+                    if(document.getElementById('batches')) document.getElementById('batches').value = data.extra_batches_list;
                 } else {
-                    alert("No se encontraron registros para estos criterios.");
+                    alert(data.error || "No se encontraron registros.");
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Ocurrió un error al consultar los datos.");
-            });
+            .catch(error => alert("Error de comunicación con SAP."));
         });
     }
 });

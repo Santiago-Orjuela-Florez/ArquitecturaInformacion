@@ -1,0 +1,61 @@
+:root {
+    --cc-red-pastel: #ffb3b6;
+    --cc-red-deep: #ef5350;
+    --cc-bg: #fff5f5;
+    --cc-white: #ffffff;
+}
+
+/* Sidebar Custom */
+.sidebar {
+    background-color: var(--cc-bg);
+}
+
+.logo-text {
+    color: var(--cc-red-deep);
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.nav-item {
+    color: #a5a5a5;
+}
+
+.nav-item:hover {
+    background-color: #ffeaea;
+    color: var(--cc-red-deep);
+}
+
+.nav-item.active {
+    background-color: var(--cc-red-pastel);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 179, 182, 0.4);
+}
+
+/* Main Content Surface */
+main {
+    transition: margin 0.3s;
+}
+
+/* Stat Cards */
+.stat-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(239, 83, 80, 0.08);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--cc-red-pastel);
+    border-radius: 10px;
+}
