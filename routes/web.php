@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductoController,
     App\Http\Controllers\PlantillaController,
-    App\Http\Controllers\PdfController;
+    App\Http\Controllers\PdfController,
+    App\Http\Controllers\LoginController;
     
 
 Route::get('/', [PlantillaController::class, 'plantilla']);
@@ -19,4 +20,5 @@ Route::get('/producto/crear', [ProductoController::class, 'create']);
 Route::post('/productos', [ProductoController::class, 'store']);
 
 
-
+#login
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
