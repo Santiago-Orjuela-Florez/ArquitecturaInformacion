@@ -304,3 +304,72 @@ body {
     gap: 90px;
 }
 
+@media (max-width: 850px) {
+    body {
+        background: var(--cc-bg, #fff5f5); /* Usa la variable de tu diseño anterior o un color suave */
+        padding: 10px;
+    }
+
+    .hoja {
+        /* Rompemos las medidas fijas para que se adapte a la pantalla */
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px; /* Espaciado automático entre elementos */
+        box-sizing: border-box;
+    }
+
+    /* Seleccionamos todos los elementos con posición absoluta 
+      y los forzamos a ser relativos y ocupar el 100% del ancho 
+    */
+    .Purchase_Order, .Material_Number, .EAN, .Pallestisation,
+    .Pallets, .Units, .Pallets2, .Units2, .Delivery_Date,
+    .Manufacturing_Date, .Best_Before_Date, .Batch, .Quantity,
+    .nombres, .checkboxes, .inventory, .desplegable, .batches,
+    .radio-group-web {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent;
+        border-bottom: 1px solid #ddd; /* Línea sutil para separar campos */
+        padding: 5px 0;
+    }
+
+    /* Ajuste de botones (Corrigiendo el top: -1380px que tenías) */
+    .btn-consultar, .Descargar {
+        position: relative;
+        top: auto;
+        width: 100%; /* Botones de ancho completo en móvil */
+        margin: 10px 0;
+    }
+
+    /* Ajuste de grupos de opciones para evitar que se aplasten */
+    .radio-group-web {
+        display: flex;
+        flex-direction: column; /* Apila los radio buttons verticalmente */
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .checkboxes {
+        position: relative;
+        top: auto;
+        left: auto;
+        width: 100%;
+    }
+
+    .item-chequeo_5 {
+        padding-top: 10px; /* Reducimos el padding excesivo para móviles */
+    }
+
+    /* Ocultamos el fondo si es una imagen fija que no se adapta */
+    .fondo {
+        display: none; 
+    }
+}
