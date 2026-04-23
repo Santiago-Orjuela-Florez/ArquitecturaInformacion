@@ -8,6 +8,6 @@ class PlantillaController extends Controller
 {
     public function plantilla()
     {
-        return view('productos.plantilla');   
+        return view('productos.formulario');   
     }
 }

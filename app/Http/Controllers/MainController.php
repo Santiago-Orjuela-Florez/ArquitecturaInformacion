@@ -8,8 +8,7 @@ class MainController extends Controller
 {
     public function main()
     {
-        $nombre="Santiago";
-        $message = $nombre . " Welcome to the main page.";
-        return view('main', compact('message'));
+        return view('main');
     }
 }
+    
