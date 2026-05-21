@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
 use App\Models\PdfDocument;
 use App\Models\Registro;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PdfController extends Controller
 {
@@ -37,14 +37,15 @@ class PdfController extends Controller
                     'primary_batch' => $batches[0] ?? '',
                     'extra_batches_list' => count($batches) > 1 ? implode(', ', array_slice($batches, 1)) : '',
                     'delivery_date' => $fecha,
-                    'material_description' => $registro->material_description
+                    'material_description' => $registro->material_description,
                 ]);
             }
 
             return response()->json(['error' => 'No se encontraron registros en SAP.'], 404);
 
         } catch (\Exception $e) {
-            \Log::error('Error en búsqueda SAP: ' . $e->getMessage());
+            \Log::error('Error en búsqueda SAP: '.$e->getMessage());
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -96,22 +97,22 @@ class PdfController extends Controller
         // Configuración de vista PDF
         $pdf = Pdf::loadView('productos.plantilla', array_merge($data, [
             'modo' => 'pdf',
-            'result' => $result
+            'result' => $result,
         ]))
-        ->setPaper('legal', 'portrait')
-        ->setOption('dpi', 72)
-        ->setOption('defaultFont', 'DejaVu Sans');
+            ->setPaper('legal', 'portrait')
+            ->setOption('dpi', 72)
+            ->setOption('defaultFont', 'DejaVu Sans');
 
         // Persistencia
-        $filename = 'formulario_' . $request->purchase_order . '_' . time() . '.pdf';
-        $path = 'pdfs/' . $filename;
-        
+        $filename = 'formulario_'.$request->purchase_order.'_'.time().'.pdf';
+        $path = 'pdfs/'.$filename;
+
         // Guardado físico en storage/app/public/pdfs
         Storage::disk('public')->put($path, $pdf->output());
 
         // Registro en historial (DB Secundaria)
         PdfDocument::create([
-            'registro_id' => $result ? $result->id : 0, 
+            'registro_id' => $result ? $result->id : 0,
             'filename' => $filename,
             'path' => $path,
         ]);

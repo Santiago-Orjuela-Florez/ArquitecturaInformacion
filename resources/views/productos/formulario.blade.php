@@ -8,16 +8,7 @@
 <div class="max-w-5xl mx-auto">
     @php $modo = $modo ?? 'web'; @endphp
 
-    @if ($errors->any() && $modo !== 'pdf')
-        <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm shadow-sm">
-            <strong class="block mb-1 font-bold">Attention! Check the following fields:</strong>
-            <ul class="list-disc list-inside opacity-90">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+
 
     @if($modo !== 'pdf')
         <form method="POST" action="{{ route('formulario.pdf') }}" class="space-y-8">

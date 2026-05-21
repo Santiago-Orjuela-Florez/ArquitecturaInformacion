@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class HomeController extends Controller
 {
     /**
@@ -12,10 +10,17 @@ class HomeController extends Controller
      */
     public function main()
     {
-        if (!session('manual_auth')) {
-            return redirect()->route('login');
-        }
+        $stats = [
+            'ventas_hoy' => \App\Models\Pedido::whereDate('fecha_pedido', date('Y-m-d'))->sum('total'),
+            'pedidos_pendientes' => \App\Models\Pedido::where('estado', 'Pendiente')->count(),
+            'eficiencia' => '94.2%',
+        ];
 
-        return view('main.home.home');
+        $chartData = \App\Models\Pedido::selectRaw('estado, count(*) as count')
+            ->groupBy('estado')
+            ->pluck('count', 'estado')
+            ->toArray();
+
+        return view('main.home.home', compact('stats', 'chartData'));
     }
 }

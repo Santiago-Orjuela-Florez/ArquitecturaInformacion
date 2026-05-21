@@ -1,0 +1,6 @@
+{
+    "The :attribute field is required.": "El campo :attribute es obligatorio.",
+    "The :attribute field must be at least :length characters.": "El campo :attribute debe tener al menos :length caracteres.",
+    "The :attribute field must be a valid email address.": "El campo :attribute debe ser una dirección de correo válida.",
+    "The :attribute field must be a valid date.": "El campo :attribute debe ser una fecha válida."
+}

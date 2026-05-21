@@ -2,15 +2,13 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Registro;
-use App\Models\Batch;
-use Illuminate\Support\Facades\Storage;
-use League\Csv\Reader;
+use Illuminate\Console\Command;
 
 class ImportCsv extends Command
 {
     protected $signature = 'import:csv {file}';
+
     protected $description = 'Importa datos desde un archivo CSV';
 
     public function __construct()
@@ -47,7 +45,7 @@ class ImportCsv extends Command
 
             // Convertir la fecha del formato CSV (dd/mm/yyyy) al formato de base de datos (yyyy-mm-dd)
             $date = null;
-            if (!empty($row['Document Date'])) {
+            if (! empty($row['Document Date'])) {
                 try {
                     $date = \Carbon\Carbon::createFromFormat('d/m/Y', $row['Document Date'])->format('Y-m-d');
                 } catch (\Exception $e) {
@@ -63,11 +61,9 @@ class ImportCsv extends Command
                 'date' => $date,  // Añade la fecha
             ]);
 
-
         }
 
         // Mensaje de éxito
         $this->info('Datos importados correctamente.');
     }
-
 }

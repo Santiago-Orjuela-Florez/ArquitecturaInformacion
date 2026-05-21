@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Batch extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
 
     protected $fillable = ['batch', 'registro_id', 'quantity', 'date'];
@@ -17,4 +18,3 @@ class Batch extends Model
         return $this->belongsTo(Registro::class);
     }
 }
-
